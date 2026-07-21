@@ -5,6 +5,9 @@
 const COLOR_TEMP = "#e8d44f";
 const COLOR_WIND = "#3ddc72";
 const COLOR_PRECIP = "#4fa3ff";
+const COLOR_DEWPOINT = "#38bdf8";
+const COLOR_HUMIDITY = "#a78bfa";
+const COLOR_CLOUD = "#94a3b8";
 const AXIS_COLOR = "#f3f6fc";
 const LABEL_FONT_SIZE = 11;
 const LABEL_FONT_FAMILY = "-apple-system, BlinkMacSystemFont, sans-serif";
@@ -81,8 +84,8 @@ function dayNightBackgroundPlugin() {
 
 // Labels each day's extreme point(s) instead of every hour -- the only label
 // density that stays legible once 7 days are squeezed into one non-scrolling
-// chart width. Temperature gets both high and low (the classic "H/L"
-// convention); wind and precip only get a daily high.
+// chart width. Series flagged `showLow` get both a daily high and low (the
+// classic temperature "H/L" convention); others get a daily high only.
 function dailyExtremesPlugin(seriesConfigs, dayGroups) {
   return {
     hooks: {
@@ -121,26 +124,28 @@ function dailyExtremesPlugin(seriesConfigs, dayGroups) {
   };
 }
 
-// Combined temperature / wind speed / precip-probability line chart, all
-// sharing one y-scale (mirrors the reference app's layout), fit to the
-// container's actual width so the full 7-day window shows with no scrolling.
-// Day names are rendered as the chart's own native x-axis (custom splits/
-// values at each day's center) rather than a separately-positioned HTML row --
-// that guarantees they land exactly under their matching day/night band,
-// since both are drawn through the same uPlot coordinate system.
-function makeHourlyChart(container, timesMs, temperatureF, windSpeedMph, precipPct) {
+// Shared builder for a combined multi-series line chart: all series share one
+// dynamically-scaled y-axis, day/night shading, a native day-name x-axis
+// (custom splits/values at each day's center, so labels land exactly under
+// their matching band -- both come from the same uPlot coordinate system),
+// and daily-extreme point labels. Fit to the container's actual width so the
+// full 7-day window shows with no scrolling.
+function buildCombinedChart(container, timesMs, seriesDefs) {
   const width = container.clientWidth;
-  const yMax = niceMax([...temperatureF, ...windSpeedMph, ...precipPct]);
+  const yMax = niceMax(seriesDefs.flatMap((s) => s.data));
   const dayGroups = groupByDay(timesMs);
   const xData = timesMs.map((t) => t / 1000);
   const dayCenters = dayGroups.map((g) => (xData[g.startIdx] + xData[g.endIdx]) / 2);
 
-  const data = [xData, temperatureF, windSpeedMph, precipPct];
+  const data = [xData, ...seriesDefs.map((s) => s.data)];
 
   const opts = {
     width,
     height: 240,
-    padding: [4, 8, 0, 8],
+    // Left padding kept near-zero: the y-axis's own `size` already reserves
+    // exactly the room its tick numbers need, so any extra left padding here
+    // just becomes dead space before the numbers.
+    padding: [4, 8, 0, 2],
     scales: { x: { time: true }, y: { range: [0, yMax] } },
     axes: [
       {
@@ -151,28 +156,55 @@ function makeHourlyChart(container, timesMs, temperatureF, windSpeedMph, precipP
         filter: (u, splits) => splits,
         values: (u, splits) => splits.map((s) => new Date(s * 1000).toLocaleDateString([], { weekday: "short" })),
       },
-      { stroke: AXIS_COLOR, label: "" },
+      {
+        stroke: AXIS_COLOR,
+        // No `label` key at all (not even ""): uPlot reserves an extra fixed
+        // ~30px "axis title" gutter whenever `label` is non-null, even an
+        // empty string -- that hidden reservation was the big blank strip
+        // between the container edge and the tick numbers.
+        size: 30,
+      },
     ],
     series: [
       {},
-      { label: "Temperature (°F)", stroke: COLOR_TEMP, width: 1, points: { show: false } },
-      { label: "Wind Speed (mph)", stroke: COLOR_WIND, width: 1, points: { show: false } },
-      { label: "Precip Chance (%)", stroke: COLOR_PRECIP, width: 0.5, dash: [6, 4], points: { show: false } },
+      ...seriesDefs.map((s) => ({
+        label: s.label,
+        stroke: s.color,
+        width: s.width,
+        dash: s.dash,
+        points: { show: false },
+      })),
     ],
     plugins: [
       dayNightBackgroundPlugin(),
       dailyExtremesPlugin(
-        [
-          { idx: 1, color: COLOR_TEMP, showLow: true },
-          { idx: 2, color: COLOR_WIND, showLow: false },
-          { idx: 3, color: COLOR_PRECIP, showLow: false },
-        ],
+        seriesDefs.map((s, i) => ({ idx: i + 1, color: s.color, showLow: s.showLow })),
         dayGroups
       ),
     ],
     legend: { show: false },
   };
   return new uPlot(opts, data, container);
+}
+
+function makeHourlyChart(
+  container,
+  timesMs,
+  temperatureF,
+  windSpeedMph,
+  precipPct,
+  dewpointF,
+  relativeHumidity,
+  skyCover
+) {
+  return buildCombinedChart(container, timesMs, [
+    { data: temperatureF, label: "Temperature (°F)", color: COLOR_TEMP, width: 1, showLow: true },
+    { data: windSpeedMph, label: "Wind Speed (mph)", color: COLOR_WIND, width: 1, showLow: false },
+    { data: precipPct, label: "Precip Chance (%)", color: COLOR_PRECIP, width: 0.5, dash: [6, 4], showLow: false },
+    { data: dewpointF, label: "Dew Point (°F)", color: COLOR_DEWPOINT, width: 1, showLow: true },
+    { data: relativeHumidity, label: "Humidity (%)", color: COLOR_HUMIDITY, width: 0.5, showLow: false },
+    { data: skyCover, label: "Cloud Cover (%)", color: COLOR_CLOUD, width: 0.5, dash: [2, 3], showLow: false },
+  ]);
 }
 
 export { makeHourlyChart, groupByDay };

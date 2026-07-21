@@ -1,7 +1,7 @@
 import { fetchPointMeta, fetchHourlyForecast, fetchGridSeries } from "./src/nws.js";
 import { fetchPollen } from "./src/pollen.js";
 import { getSavedLocation, resolveLocationFromZip } from "./src/location.js";
-import { makeHourlyChart } from "./src/chart.js";
+import { makeHourlyChart, makeConditionsChart } from "./src/chart.js";
 
 const HOURS_TO_SHOW = 168; // 7 days
 
@@ -62,7 +62,10 @@ async function loadAll(location) {
       gridSeries.timesMs,
       gridSeries.temperatureF,
       gridSeries.windSpeedMph,
-      gridSeries.probabilityOfPrecipitation
+      gridSeries.probabilityOfPrecipitation,
+      gridSeries.dewpointF,
+      gridSeries.relativeHumidity,
+      gridSeries.skyCover
     );
     cacheLastGood({ location, now, gridSeries });
   } catch (err) {
