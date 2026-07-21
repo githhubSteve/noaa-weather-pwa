@@ -2,11 +2,11 @@
 // Everything here fits the full 7-day hourly window into the container's actual
 // width -- no horizontal scrolling, no per-hour fixed pixel size.
 
-const COLOR_TEMP = "#e8d44f";
-const COLOR_WIND = "#3ddc72";
+const COLOR_TEMP = "#f2e04a";
+const COLOR_WIND = "#5fe045";
 const COLOR_PRECIP = "#4fa3ff";
-const COLOR_DEWPOINT = "#38bdf8";
-const COLOR_HUMIDITY = "#a78bfa";
+const COLOR_DEWPOINT = "#ff9d3c";
+const COLOR_HUMIDITY = "#ff33cc";
 const COLOR_CLOUD = "#ffffff";
 const AXIS_COLOR = "#f3f6fc";
 const LABEL_FONT_SIZE = 11;
@@ -124,13 +124,56 @@ function dailyExtremesPlugin(seriesConfigs, dayGroups) {
   };
 }
 
+// Draws one small arrow per day, centered above that day's column, rotated to
+// the wind direction at that day's center hour. NWS gives direction as the
+// meteorological "wind is coming FROM" bearing (0=N, 90=E, ...); rotating by
+// +180 points the arrow the way the wind is actually blowing, which reads
+// more intuitively than an arrow pointing "backward" into the wind.
+function windArrowPlugin(windDirectionDeg, dayGroups) {
+  return {
+    hooks: {
+      draw: [
+        (u) => {
+          const ctx = u.ctx;
+          const xData = u.data[0];
+          const len = 7 * u.pxRatio;
+          const y = u.bbox.top - 13 * u.pxRatio;
+          ctx.save();
+          ctx.strokeStyle = COLOR_WIND;
+          ctx.lineWidth = 1.3 * u.pxRatio;
+          ctx.lineCap = "round";
+          dayGroups.forEach(({ startIdx, endIdx }) => {
+            const centerIdx = Math.round((startIdx + endIdx) / 2);
+            const dir = windDirectionDeg[centerIdx];
+            if (dir == null) return;
+            const x = u.valToPos(xData[centerIdx], "x", true);
+            const angleRad = (((dir + 180) % 360) * Math.PI) / 180;
+            ctx.save();
+            ctx.translate(x, y);
+            ctx.rotate(angleRad);
+            ctx.beginPath();
+            ctx.moveTo(0, len / 2);
+            ctx.lineTo(0, -len / 2);
+            ctx.lineTo(-len * 0.3, -len / 2 + len * 0.35);
+            ctx.moveTo(0, -len / 2);
+            ctx.lineTo(len * 0.3, -len / 2 + len * 0.35);
+            ctx.stroke();
+            ctx.restore();
+          });
+          ctx.restore();
+        },
+      ],
+    },
+  };
+}
+
 // Shared builder for a combined multi-series line chart: all series share one
 // dynamically-scaled y-axis, day/night shading, a native day-name x-axis
 // (custom splits/values at each day's center, so labels land exactly under
 // their matching band -- both come from the same uPlot coordinate system),
 // and daily-extreme point labels. Fit to the container's actual width so the
 // full 7-day window shows with no scrolling.
-function buildCombinedChart(container, timesMs, seriesDefs) {
+function buildCombinedChart(container, timesMs, seriesDefs, extraPlugins = []) {
   const width = container.clientWidth;
   const yMax = niceMax(seriesDefs.flatMap((s) => s.data));
   const dayGroups = groupByDay(timesMs);
@@ -144,8 +187,9 @@ function buildCombinedChart(container, timesMs, seriesDefs) {
     height: 240,
     // Left padding kept near-zero: the y-axis's own `size` already reserves
     // exactly the room its tick numbers need, so any extra left padding here
-    // just becomes dead space before the numbers.
-    padding: [4, 8, 0, 2],
+    // just becomes dead space before the numbers. Top padding is bumped up to
+    // leave room for the wind-direction arrow row drawn above the plot area.
+    padding: [22, 8, 0, 2],
     scales: { x: { time: true }, y: { range: [0, yMax] } },
     axes: [
       {
@@ -181,6 +225,7 @@ function buildCombinedChart(container, timesMs, seriesDefs) {
         seriesDefs.map((s, i) => ({ idx: i + 1, color: s.color, showLow: s.showLow })),
         dayGroups
       ),
+      ...extraPlugins,
     ],
     legend: { show: false },
   };
@@ -192,19 +237,25 @@ function makeHourlyChart(
   timesMs,
   temperatureF,
   windSpeedMph,
+  windDirectionDeg,
   precipPct,
   dewpointF,
   relativeHumidity,
   skyCover
 ) {
-  return buildCombinedChart(container, timesMs, [
-    { data: temperatureF, label: "Temperature (°F)", color: COLOR_TEMP, width: 1, showLow: true },
-    { data: windSpeedMph, label: "Wind Speed (mph)", color: COLOR_WIND, width: 1, showLow: false },
-    { data: precipPct, label: "Precip Chance (%)", color: COLOR_PRECIP, width: 0.5, dash: [6, 4], showLow: false },
-    { data: dewpointF, label: "Dew Point (°F)", color: COLOR_DEWPOINT, width: 1, showLow: false },
-    { data: relativeHumidity, label: "Humidity (%)", color: COLOR_HUMIDITY, width: 0.5, showLow: false },
-    { data: skyCover, label: "Cloud Cover (%)", color: COLOR_CLOUD, width: 1.5, showLow: false },
-  ]);
+  return buildCombinedChart(
+    container,
+    timesMs,
+    [
+      { data: temperatureF, label: "Temperature (°F)", color: COLOR_TEMP, width: 1, showLow: true },
+      { data: windSpeedMph, label: "Wind Speed (mph)", color: COLOR_WIND, width: 1, showLow: false },
+      { data: precipPct, label: "Precip Chance (%)", color: COLOR_PRECIP, width: 0.5, dash: [6, 4], showLow: false },
+      { data: dewpointF, label: "Dew Point (°F)", color: COLOR_DEWPOINT, width: 1, showLow: false },
+      { data: relativeHumidity, label: "Humidity (%)", color: COLOR_HUMIDITY, width: 0.5, showLow: false },
+      { data: skyCover, label: "Cloud Cover (%)", color: COLOR_CLOUD, width: 0.5, showLow: false },
+    ],
+    [windArrowPlugin(windDirectionDeg, groupByDay(timesMs))]
+  );
 }
 
 export { makeHourlyChart, groupByDay };

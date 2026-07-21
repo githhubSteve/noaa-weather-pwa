@@ -105,6 +105,7 @@ async function fetchGridSeries(gridpointUrl, hours = 48) {
     timesMs: grid,
     temperatureF: seriesFor("temperature", CELSIUS_TO_F),
     windSpeedMph: seriesFor("windSpeed", KMH_TO_MPH),
+    windDirectionDeg: seriesFor("windDirection"),
     probabilityOfPrecipitation: seriesFor("probabilityOfPrecipitation"),
     dewpointF: seriesFor("dewpoint", CELSIUS_TO_F),
     relativeHumidity: seriesFor("relativeHumidity"),

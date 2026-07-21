@@ -62,6 +62,7 @@ async function loadAll(location) {
       gridSeries.timesMs,
       gridSeries.temperatureF,
       gridSeries.windSpeedMph,
+      gridSeries.windDirectionDeg,
       gridSeries.probabilityOfPrecipitation,
       gridSeries.dewpointF,
       gridSeries.relativeHumidity,
