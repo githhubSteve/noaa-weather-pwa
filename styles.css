@@ -66,13 +66,39 @@ main { max-width: 720px; margin: 0 auto; padding: 0 1rem; }
   background: var(--accent); color: #071122; font-weight: 600; cursor: pointer;
 }
 
-.now-panel {
-  padding: 1.5rem 0;
-  text-align: center;
+.now-pollen-panel {
+  display: flex;
+  align-items: center;
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 1rem;
+  margin: 1rem 0;
+  gap: 1rem;
 }
-.now-temp { font-size: 3.5rem; font-weight: 200; }
-.now-conditions { font-size: 1.1rem; color: var(--muted); }
-.now-detail { font-size: 0.85rem; color: var(--muted); margin-top: 0.3rem; }
+.now-col {
+  flex: 1;
+  min-width: 0;
+}
+.now-temp { font-size: 2.6rem; font-weight: 200; line-height: 1.1; }
+.now-conditions { font-size: 1rem; color: var(--muted); }
+.now-detail { font-size: 0.8rem; color: var(--muted); margin-top: 0.2rem; }
+
+.pollen-col {
+  flex: 1;
+  min-width: 0;
+  padding-left: 1rem;
+  border-left: 1px solid var(--border);
+}
+.pollen-col h2 {
+  font-size: 0.85rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--muted);
+  margin: 0 0 0.4rem 0;
+}
+.pollen-index { font-size: 1.6rem; font-weight: 300; }
+.pollen-triggers { font-size: 0.8rem; color: var(--muted); margin-top: 0.2rem; }
 
 .chart-section {
   background: var(--panel);
@@ -100,23 +126,6 @@ main { max-width: 720px; margin: 0 auto; padding: 0 1rem; }
 }
 .legend-item { display: inline-flex; align-items: center; gap: 0.35rem; }
 .legend-item i { width: 0.7rem; height: 0.7rem; border-radius: 2px; display: inline-block; }
-
-.pollen-panel {
-  background: var(--panel);
-  border: 1px solid var(--border);
-  border-radius: 12px;
-  padding: 1rem;
-  margin-bottom: 1rem;
-}
-.pollen-panel h2 {
-  font-size: 0.85rem;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  color: var(--muted);
-  margin: 0 0 0.6rem 0;
-}
-.pollen-index { font-size: 2rem; font-weight: 300; }
-.pollen-triggers { font-size: 0.85rem; color: var(--muted); margin-top: 0.3rem; }
 
 .error-panel {
   background: #3a1f1f;

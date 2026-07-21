@@ -39,6 +39,16 @@ function niceMax(values, floor = 100) {
   return Math.ceil(max / 10) * 10;
 }
 
+// Fixed-width chunks (in hours) from the start of the data window -- unlike
+// groupByDay this ignores calendar boundaries, it's just every N hours.
+function groupByFixedHours(count, hoursPerGroup) {
+  const groups = [];
+  for (let start = 0; start < count; start += hoursPerGroup) {
+    groups.push({ startIdx: start, endIdx: Math.min(start + hoursPerGroup - 1, count - 1) });
+  }
+  return groups;
+}
+
 // Groups the hourly grid into contiguous calendar-day chunks (the grid starts
 // at "now", not midnight, so the first/last chunks can be partial days).
 function groupByDay(timesMs) {
@@ -129,12 +139,13 @@ function dailyExtremesPlugin(seriesConfigs, dayGroups) {
   };
 }
 
-// Draws one small arrow per day, centered above that day's column, rotated to
-// the wind direction at that day's center hour. NWS gives direction as the
-// meteorological "wind is coming FROM" bearing (0=N, 90=E, ...); rotating by
-// +180 points the arrow the way the wind is actually blowing, which reads
-// more intuitively than an arrow pointing "backward" into the wind.
-function windArrowPlugin(windDirectionDeg, dayGroups) {
+// Draws one small arrow per time chunk (12h chunks, see groupByFixedHours),
+// centered above that chunk, rotated to the wind direction at its center
+// hour. NWS gives direction as the meteorological "wind is coming FROM"
+// bearing (0=N, 90=E, ...); rotating by +180 points the arrow the way the
+// wind is actually blowing, which reads more intuitively than an arrow
+// pointing "backward" into the wind.
+function windArrowPlugin(windDirectionDeg, arrowGroups) {
   return {
     hooks: {
       draw: [
@@ -147,7 +158,7 @@ function windArrowPlugin(windDirectionDeg, dayGroups) {
           ctx.strokeStyle = COLOR_WIND;
           ctx.lineWidth = 1.3 * uPlot.pxRatio;
           ctx.lineCap = "round";
-          dayGroups.forEach(({ startIdx, endIdx }) => {
+          arrowGroups.forEach(({ startIdx, endIdx }) => {
             const centerIdx = Math.round((startIdx + endIdx) / 2);
             const dir = windDirectionDeg[centerIdx];
             if (dir == null) return;
@@ -259,7 +270,7 @@ function makeHourlyChart(
       { data: relativeHumidity, label: "Humidity (%)", color: COLOR_HUMIDITY, width: 0.5, showLow: false },
       { data: skyCover, label: "Cloud Cover (%)", color: COLOR_CLOUD, width: 0.5, showLow: false },
     ],
-    [windArrowPlugin(windDirectionDeg, groupByDay(timesMs))]
+    [windArrowPlugin(windDirectionDeg, groupByFixedHours(timesMs.length, 12))]
   );
 }
 

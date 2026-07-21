@@ -30,10 +30,17 @@
     </form>
   </section>
 
-  <section class="now-panel">
-    <div id="now-temp" class="now-temp">--°</div>
-    <div id="now-conditions" class="now-conditions">--</div>
-    <div id="now-detail" class="now-detail"></div>
+  <section class="now-pollen-panel">
+    <div class="now-col">
+      <div id="now-temp" class="now-temp">--°</div>
+      <div id="now-conditions" class="now-conditions">--</div>
+      <div id="now-detail" class="now-detail"></div>
+    </div>
+    <div class="pollen-col">
+      <h2>Pollen</h2>
+      <div id="pollen-index" class="pollen-index">--</div>
+      <div id="pollen-triggers" class="pollen-triggers"></div>
+    </div>
   </section>
 
   <section class="chart-section hourly-section">
@@ -47,12 +54,6 @@
       <span class="legend-item"><i style="background:#ff33cc"></i>Humidity (%)</span>
       <span class="legend-item"><i style="background:#ffffff"></i>Cloud Cover (%)</span>
     </div>
-  </section>
-
-  <section class="pollen-panel">
-    <h2>Pollen</h2>
-    <div id="pollen-index" class="pollen-index">--</div>
-    <div id="pollen-triggers" class="pollen-triggers"></div>
   </section>
 
   <section id="error-panel" class="error-panel" hidden></section>
