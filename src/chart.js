@@ -6,7 +6,17 @@ const COLOR_TEMP = "#e8d44f";
 const COLOR_WIND = "#3ddc72";
 const COLOR_PRECIP = "#4fa3ff";
 const AXIS_COLOR = "#f3f6fc";
-const LABEL_FONT = "300 11px -apple-system, BlinkMacSystemFont, sans-serif";
+const LABEL_FONT_SIZE = 11;
+const LABEL_FONT_FAMILY = "-apple-system, BlinkMacSystemFont, sans-serif";
+
+// Canvas font sizes are in physical canvas pixels, not CSS pixels -- on a
+// high-DPI screen (e.g. an iPhone at 3x) the canvas is internally scaled up
+// by devicePixelRatio, so an unscaled "11px" renders visually tiny compared
+// to the same value on a 1x desktop display. uPlot's own axis labels already
+// account for this; our custom-drawn labels need to do it explicitly.
+function labelFont(u) {
+  return `300 ${LABEL_FONT_SIZE * u.pxRatio}px ${LABEL_FONT_FAMILY}`;
+}
 
 // Fixed civil-twilight approximation (8pm-6am) rather than a real sunrise/sunset
 // calculation -- good enough for a background shading cue, not worth a second
@@ -81,7 +91,7 @@ function dailyExtremesPlugin(seriesConfigs, dayGroups) {
           const ctx = u.ctx;
           const xData = u.data[0];
           ctx.save();
-          ctx.font = LABEL_FONT;
+          ctx.font = labelFont(u);
           ctx.textAlign = "center";
           seriesConfigs.forEach(({ idx, color, showLow }) => {
             const series = u.data[idx];
@@ -130,7 +140,7 @@ function makeHourlyChart(container, timesMs, temperatureF, windSpeedMph, precipP
   const opts = {
     width,
     height: 240,
-    padding: [8, 8, 8, 8],
+    padding: [4, 8, 0, 8],
     scales: { x: { time: true }, y: { range: [0, yMax] } },
     axes: [
       {
@@ -138,7 +148,7 @@ function makeHourlyChart(container, timesMs, temperatureF, windSpeedMph, precipP
         grid: { show: false },
         ticks: { show: false },
         splits: () => dayCenters,
-        filter: (u, splits) => splits.map((_, i) => i),
+        filter: (u, splits) => splits,
         values: (u, splits) => splits.map((s) => new Date(s * 1000).toLocaleDateString([], { weekday: "short" })),
       },
       { stroke: AXIS_COLOR, label: "" },
