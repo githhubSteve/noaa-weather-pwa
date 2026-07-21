@@ -36,14 +36,25 @@
     <div id="now-detail" class="now-detail"></div>
   </section>
 
-  <section class="chart-section">
-    <h2>Temperature &amp; Precipitation</h2>
-    <div id="chart-temp" class="chart"></div>
-  </section>
-
-  <section class="chart-section">
-    <h2>Humidity &amp; Sky Cover</h2>
-    <div id="chart-humidity" class="chart"></div>
+  <section class="chart-section hourly-section">
+    <h2>Hourly (7 days)</h2>
+    <div id="hourly-scroll" class="hourly-scroll">
+      <div id="chart-hourly" class="chart-hourly"></div>
+      <div id="chart-qpf-wrap" class="chart-qpf-wrap">
+        <div id="chart-qpf" class="chart-qpf"></div>
+      </div>
+      <div id="hour-axis" class="hour-axis"></div>
+    </div>
+    <div class="legend-row">
+      <span class="legend-item"><i style="background:#e8d44f"></i>Temperature (&deg;F)</span>
+      <span class="legend-item"><i style="background:#3ddc72"></i>Wind Speed (mph)</span>
+      <span class="legend-item"><i style="background:#4fa3ff"></i>Precip Chance (%)</span>
+      <span class="legend-item"><i style="background:#4fa3ff;opacity:0.5"></i>Liquid Precip (in)</span>
+    </div>
+    <div class="scrubber-row">
+      <span id="scrubber-day-label" class="scrubber-day-label">--</span>
+      <input id="scrubber" type="range" min="0" max="1000" value="0" />
+    </div>
   </section>
 
   <section class="pollen-panel">

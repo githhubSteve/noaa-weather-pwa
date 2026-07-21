@@ -1,7 +1,10 @@
 import { fetchPointMeta, fetchHourlyForecast, fetchGridSeries } from "./src/nws.js";
 import { fetchPollen } from "./src/pollen.js";
 import { getSavedLocation, resolveLocationFromZip } from "./src/location.js";
-import { makeTempPrecipChart, makeHumiditySkyChart } from "./src/chart.js";
+import { makeHourlyChart, makeQpfBarStrip, PX_PER_HOUR } from "./src/chart.js";
+
+const HOURS_TO_SHOW = 168; // 7 days
+const HOUR_AXIS_STEP = 4; // label every 4 hours, matching the reference app's cadence
 
 const $ = (id) => document.getElementById(id);
 
@@ -16,14 +19,19 @@ const els = {
   nowTemp: $("now-temp"),
   nowConditions: $("now-conditions"),
   nowDetail: $("now-detail"),
-  chartTemp: $("chart-temp"),
-  chartHumidity: $("chart-humidity"),
+  hourlyScroll: $("hourly-scroll"),
+  chartHourly: $("chart-hourly"),
+  chartQpf: $("chart-qpf"),
+  hourAxis: $("hour-axis"),
+  scrubber: $("scrubber"),
+  scrubberDayLabel: $("scrubber-day-label"),
   pollenIndex: $("pollen-index"),
   pollenTriggers: $("pollen-triggers"),
   errorPanel: $("error-panel"),
 };
 
-let charts = { temp: null, humidity: null };
+let hourlyChart = null;
+let currentTimesMs = [];
 
 function showError(message) {
   els.errorPanel.hidden = false;
@@ -39,6 +47,50 @@ function showLocationSetup(show) {
   els.locationSetup.hidden = !show;
 }
 
+function renderHourAxis(timesMs) {
+  els.hourAxis.innerHTML = "";
+  for (let i = 0; i < timesMs.length; i += HOUR_AXIS_STEP) {
+    const span = document.createElement("span");
+    span.style.left = `${i * PX_PER_HOUR + PX_PER_HOUR / 2}px`;
+    span.textContent = new Date(timesMs[i])
+      .toLocaleTimeString([], { hour: "numeric" })
+      .replace(" ", "")
+      .toLowerCase();
+    els.hourAxis.appendChild(span);
+  }
+  els.hourAxis.style.width = `${timesMs.length * PX_PER_HOUR}px`;
+}
+
+function centerTimeIndex() {
+  const container = els.hourlyScroll;
+  const centerPx = container.scrollLeft + container.clientWidth / 2;
+  const idx = Math.round(centerPx / PX_PER_HOUR);
+  return Math.min(currentTimesMs.length - 1, Math.max(0, idx));
+}
+
+function updateScrubberFromScroll() {
+  const container = els.hourlyScroll;
+  const maxScroll = container.scrollWidth - container.clientWidth;
+  const frac = maxScroll > 0 ? container.scrollLeft / maxScroll : 0;
+  els.scrubber.value = Math.round(frac * 1000);
+
+  const idx = centerTimeIndex();
+  if (currentTimesMs[idx] != null) {
+    els.scrubberDayLabel.textContent = new Date(currentTimesMs[idx]).toLocaleDateString([], {
+      weekday: "long",
+    });
+  }
+}
+
+els.scrubber.addEventListener("input", () => {
+  const container = els.hourlyScroll;
+  const maxScroll = container.scrollWidth - container.clientWidth;
+  container.scrollLeft = (els.scrubber.value / 1000) * maxScroll;
+  updateScrubberFromScroll();
+});
+
+els.hourlyScroll.addEventListener("scroll", updateScrubberFromScroll);
+
 async function loadAll(location) {
   clearError();
   els.locationName.textContent = location.cityState;
@@ -47,7 +99,7 @@ async function loadAll(location) {
     const meta = await fetchPointMeta(location.lat, location.lon);
     const [hourly, gridSeries] = await Promise.all([
       fetchHourlyForecast(meta.hourlyUrl),
-      fetchGridSeries(meta.gridpointUrl, 48),
+      fetchGridSeries(meta.gridpointUrl, HOURS_TO_SHOW),
     ]);
 
     const now = hourly[0];
@@ -55,20 +107,20 @@ async function loadAll(location) {
     els.nowConditions.textContent = now.shortForecast;
     els.nowDetail.textContent = `Wind ${now.windSpeed} ${now.windDirection}`;
 
-    if (charts.temp) charts.temp.destroy();
-    if (charts.humidity) charts.humidity.destroy();
-    charts.temp = makeTempPrecipChart(
-      els.chartTemp,
+    currentTimesMs = gridSeries.timesMs;
+
+    if (hourlyChart) hourlyChart.destroy();
+    hourlyChart = makeHourlyChart(
+      els.chartHourly,
       gridSeries.timesMs,
       gridSeries.temperatureF,
+      gridSeries.windSpeedMph,
       gridSeries.probabilityOfPrecipitation
     );
-    charts.humidity = makeHumiditySkyChart(
-      els.chartHumidity,
-      gridSeries.timesMs,
-      gridSeries.relativeHumidity,
-      gridSeries.skyCover
-    );
+    makeQpfBarStrip(els.chartQpf, gridSeries.timesMs, gridSeries.quantitativePrecipitationIn);
+    renderHourAxis(gridSeries.timesMs);
+    els.hourlyScroll.scrollLeft = 0;
+    updateScrubberFromScroll();
 
     cacheLastGood({ location, now, gridSeries });
   } catch (err) {
