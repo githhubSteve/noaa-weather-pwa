@@ -203,7 +203,7 @@ function makeHourlyChart(
     { data: precipPct, label: "Precip Chance (%)", color: COLOR_PRECIP, width: 0.5, dash: [6, 4], showLow: false },
     { data: dewpointF, label: "Dew Point (°F)", color: COLOR_DEWPOINT, width: 1, showLow: false },
     { data: relativeHumidity, label: "Humidity (%)", color: COLOR_HUMIDITY, width: 0.5, showLow: false },
-    { data: skyCover, label: "Cloud Cover (%)", color: COLOR_CLOUD, width: 0.5, dash: [2, 3], showLow: false },
+    { data: skyCover, label: "Cloud Cover (%)", color: COLOR_CLOUD, width: 1.5, showLow: false },
   ]);
 }
 
