@@ -7,7 +7,7 @@
 // Deploy: wrangler deploy  (see worker/wrangler.toml)
 // Usage:  GET https://<your-worker>.workers.dev/pollen/76244
 
-const ALLOWED_ORIGIN = "*"; // tighten to your GitHub Pages origin once deployed
+const ALLOWED_ORIGIN = "https://githhubsteve.github.io";
 
 export default {
   async fetch(request) {

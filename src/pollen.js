@@ -1,6 +1,6 @@
 // pollen.com has no CORS headers, so this goes through a small Cloudflare Worker
 // proxy that just re-forwards the request and adds Access-Control-Allow-Origin.
-const PROXY_BASE = "https://noaa-weather-pollen-proxy.YOUR_SUBDOMAIN.workers.dev";
+const PROXY_BASE = "https://noaa-weather-pollen-proxy.fancy-meadow-47bd.workers.dev";
 
 async function fetchPollen(zip) {
   const res = await fetch(`${PROXY_BASE}/pollen/${zip}`);
