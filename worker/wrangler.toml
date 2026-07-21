@@ -1,0 +1,3 @@
+name = "noaa-weather-pollen-proxy"
+main = "pollen-proxy.js"
+compatibility_date = "2026-07-01"

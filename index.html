@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<meta name="theme-color" content="#0b1220" />
+<title>NOAA Weather</title>
+<link rel="manifest" href="manifest.json" />
+<link rel="apple-touch-icon" href="icons/icon-192.png" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+<link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+<header class="topbar">
+  <h1 id="location-name">Loading location…</h1>
+  <div class="header-actions">
+    <span id="updated-at" class="updated-at"></span>
+    <button id="refresh-btn" title="Refresh">&#8635;</button>
+    <button id="change-location-btn" title="Change location">&#9881;</button>
+  </div>
+</header>
+
+<main>
+  <section id="location-setup" class="location-setup" hidden>
+    <h2>Set your location</h2>
+    <form id="location-form">
+      <input id="zip-input" type="text" inputmode="numeric" pattern="[0-9]{5}" maxlength="5" placeholder="ZIP code" required />
+      <button type="submit">Save</button>
+    </form>
+  </section>
+
+  <section class="now-panel">
+    <div id="now-temp" class="now-temp">--°</div>
+    <div id="now-conditions" class="now-conditions">--</div>
+    <div id="now-detail" class="now-detail"></div>
+  </section>
+
+  <section class="chart-section">
+    <h2>Temperature &amp; Precipitation</h2>
+    <div id="chart-temp" class="chart"></div>
+  </section>
+
+  <section class="chart-section">
+    <h2>Humidity &amp; Sky Cover</h2>
+    <div id="chart-humidity" class="chart"></div>
+  </section>
+
+  <section class="pollen-panel">
+    <h2>Pollen</h2>
+    <div id="pollen-index" class="pollen-index">--</div>
+    <div id="pollen-triggers" class="pollen-triggers"></div>
+  </section>
+
+  <section id="error-panel" class="error-panel" hidden></section>
+</main>
+
+<script src="vendor/uplot.iife.min.js"></script>
+<script type="module" src="app.js"></script>
+</body>
+</html>
