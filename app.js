@@ -1,10 +1,9 @@
 import { fetchPointMeta, fetchHourlyForecast, fetchGridSeries } from "./src/nws.js";
 import { fetchPollen } from "./src/pollen.js";
 import { getSavedLocation, resolveLocationFromZip } from "./src/location.js";
-import { makeHourlyChart, makeQpfBarStrip, PX_PER_HOUR } from "./src/chart.js";
+import { makeHourlyChart, makeQpfBarStrip, renderDayAxis } from "./src/chart.js";
 
 const HOURS_TO_SHOW = 168; // 7 days
-const HOUR_AXIS_STEP = 4; // label every 4 hours, matching the reference app's cadence
 
 const $ = (id) => document.getElementById(id);
 
@@ -19,19 +18,15 @@ const els = {
   nowTemp: $("now-temp"),
   nowConditions: $("now-conditions"),
   nowDetail: $("now-detail"),
-  hourlyScroll: $("hourly-scroll"),
   chartHourly: $("chart-hourly"),
   chartQpf: $("chart-qpf"),
-  hourAxis: $("hour-axis"),
-  scrubber: $("scrubber"),
-  scrubberDayLabel: $("scrubber-day-label"),
+  dayAxis: $("day-axis"),
   pollenIndex: $("pollen-index"),
   pollenTriggers: $("pollen-triggers"),
   errorPanel: $("error-panel"),
 };
 
 let hourlyChart = null;
-let currentTimesMs = [];
 
 function showError(message) {
   els.errorPanel.hidden = false;
@@ -46,50 +41,6 @@ function clearError() {
 function showLocationSetup(show) {
   els.locationSetup.hidden = !show;
 }
-
-function renderHourAxis(timesMs) {
-  els.hourAxis.innerHTML = "";
-  for (let i = 0; i < timesMs.length; i += HOUR_AXIS_STEP) {
-    const span = document.createElement("span");
-    span.style.left = `${i * PX_PER_HOUR + PX_PER_HOUR / 2}px`;
-    span.textContent = new Date(timesMs[i])
-      .toLocaleTimeString([], { hour: "numeric" })
-      .replace(" ", "")
-      .toLowerCase();
-    els.hourAxis.appendChild(span);
-  }
-  els.hourAxis.style.width = `${timesMs.length * PX_PER_HOUR}px`;
-}
-
-function centerTimeIndex() {
-  const container = els.hourlyScroll;
-  const centerPx = container.scrollLeft + container.clientWidth / 2;
-  const idx = Math.round(centerPx / PX_PER_HOUR);
-  return Math.min(currentTimesMs.length - 1, Math.max(0, idx));
-}
-
-function updateScrubberFromScroll() {
-  const container = els.hourlyScroll;
-  const maxScroll = container.scrollWidth - container.clientWidth;
-  const frac = maxScroll > 0 ? container.scrollLeft / maxScroll : 0;
-  els.scrubber.value = Math.round(frac * 1000);
-
-  const idx = centerTimeIndex();
-  if (currentTimesMs[idx] != null) {
-    els.scrubberDayLabel.textContent = new Date(currentTimesMs[idx]).toLocaleDateString([], {
-      weekday: "long",
-    });
-  }
-}
-
-els.scrubber.addEventListener("input", () => {
-  const container = els.hourlyScroll;
-  const maxScroll = container.scrollWidth - container.clientWidth;
-  container.scrollLeft = (els.scrubber.value / 1000) * maxScroll;
-  updateScrubberFromScroll();
-});
-
-els.hourlyScroll.addEventListener("scroll", updateScrubberFromScroll);
 
 async function loadAll(location) {
   clearError();
@@ -107,8 +58,6 @@ async function loadAll(location) {
     els.nowConditions.textContent = now.shortForecast;
     els.nowDetail.textContent = `Wind ${now.windSpeed} ${now.windDirection}`;
 
-    currentTimesMs = gridSeries.timesMs;
-
     if (hourlyChart) hourlyChart.destroy();
     hourlyChart = makeHourlyChart(
       els.chartHourly,
@@ -118,9 +67,7 @@ async function loadAll(location) {
       gridSeries.probabilityOfPrecipitation
     );
     makeQpfBarStrip(els.chartQpf, gridSeries.timesMs, gridSeries.quantitativePrecipitationIn);
-    renderHourAxis(gridSeries.timesMs);
-    els.hourlyScroll.scrollLeft = 0;
-    updateScrubberFromScroll();
+    renderDayAxis(els.dayAxis, gridSeries.timesMs);
 
     cacheLastGood({ location, now, gridSeries });
   } catch (err) {
