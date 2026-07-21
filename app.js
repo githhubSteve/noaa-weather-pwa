@@ -1,7 +1,7 @@
 import { fetchPointMeta, fetchHourlyForecast, fetchGridSeries } from "./src/nws.js";
 import { fetchPollen } from "./src/pollen.js";
 import { getSavedLocation, resolveLocationFromZip } from "./src/location.js";
-import { makeHourlyChart, makeConditionsChart } from "./src/chart.js";
+import { makeHourlyChart } from "./src/chart.js";
 
 const HOURS_TO_SHOW = 168; // 7 days
 
