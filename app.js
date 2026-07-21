@@ -19,6 +19,8 @@ const els = {
   nowConditions: $("now-conditions"),
   nowDetail: $("now-detail"),
   chartHourly: $("chart-hourly"),
+  legendToggle: $("legend-toggle"),
+  legendRow: $("legend-row"),
   pollenIndex: $("pollen-index"),
   pollenTriggers: $("pollen-triggers"),
   errorPanel: $("error-panel"),
@@ -137,6 +139,10 @@ els.changeLocationBtn.addEventListener("click", () => {
 els.refreshBtn.addEventListener("click", () => {
   const saved = getSavedLocation();
   if (saved) loadAll(saved);
+});
+
+els.legendToggle.addEventListener("click", () => {
+  els.legendRow.hidden = !els.legendRow.hidden;
 });
 
 if ("serviceWorker" in navigator) {

@@ -190,7 +190,11 @@ function windArrowPlugin(windDirectionDeg, arrowGroups) {
 // and daily-extreme point labels. Fit to the container's actual width so the
 // full 7-day window shows with no scrolling.
 function buildCombinedChart(container, timesMs, seriesDefs, extraPlugins = []) {
+  // Fill the container's actual size in both dimensions -- previously height
+  // was a hardcoded number duplicating what CSS already set on the container,
+  // which could silently drift out of sync with it.
   const width = container.clientWidth;
+  const height = container.clientHeight || 240;
   const yMax = niceMax(seriesDefs.flatMap((s) => s.data));
   const dayGroups = groupByDay(timesMs);
   const xData = timesMs.map((t) => t / 1000);
@@ -200,7 +204,7 @@ function buildCombinedChart(container, timesMs, seriesDefs, extraPlugins = []) {
 
   const opts = {
     width,
-    height: 240,
+    height,
     // Left padding kept near-zero: the y-axis's own `size` already reserves
     // exactly the room its tick numbers need, so any extra left padding here
     // just becomes dead space before the numbers. Top padding is bumped up to

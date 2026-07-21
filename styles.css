@@ -112,9 +112,29 @@ main { max-width: 720px; margin: 0 auto; padding: 0 1rem; }
   text-transform: uppercase;
   letter-spacing: 0.05em;
   color: var(--muted);
-  margin: 0 0 0.2rem 0;
+  margin: 0;
 }
-.chart-hourly { height: 240px; }
+.section-header-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.2rem;
+}
+.legend-toggle {
+  background: none;
+  border: none;
+  color: var(--accent);
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  cursor: pointer;
+  padding: 0;
+}
+.chart-hourly {
+  width: 100%;
+  height: 240px;
+}
 
 .legend-row {
   display: flex;
@@ -124,6 +144,7 @@ main { max-width: 720px; margin: 0 auto; padding: 0 1rem; }
   font-size: 0.75rem;
   color: var(--muted);
 }
+.legend-row[hidden] { display: none; }
 .legend-item { display: inline-flex; align-items: center; gap: 0.35rem; }
 .legend-item i { width: 0.7rem; height: 0.7rem; border-radius: 2px; display: inline-block; }
 
