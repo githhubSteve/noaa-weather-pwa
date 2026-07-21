@@ -17,8 +17,13 @@ const LABEL_FONT_FAMILY = "-apple-system, BlinkMacSystemFont, sans-serif";
 // by devicePixelRatio, so an unscaled "11px" renders visually tiny compared
 // to the same value on a 1x desktop display. uPlot's own axis labels already
 // account for this; our custom-drawn labels need to do it explicitly.
-function labelFont(u) {
-  return `300 ${LABEL_FONT_SIZE * u.pxRatio}px ${LABEL_FONT_FAMILY}`;
+// Note: pxRatio lives on the `uPlot` constructor itself (a static), not on
+// chart instances -- `u.pxRatio` is always undefined and silently produces
+// "NaNpx" (which canvas just ignores, falling back to its last-set font)
+// or, worse, NaN coordinates that make ctx.translate/rotate draw nothing at
+// all. That's what was making the wind arrows invisible.
+function labelFont() {
+  return `300 ${LABEL_FONT_SIZE * uPlot.pxRatio}px ${LABEL_FONT_FAMILY}`;
 }
 
 // Fixed civil-twilight approximation (8pm-6am) rather than a real sunrise/sunset
@@ -94,7 +99,7 @@ function dailyExtremesPlugin(seriesConfigs, dayGroups) {
           const ctx = u.ctx;
           const xData = u.data[0];
           ctx.save();
-          ctx.font = labelFont(u);
+          ctx.font = labelFont();
           ctx.textAlign = "center";
           seriesConfigs.forEach(({ idx, color, showLow }) => {
             const series = u.data[idx];
@@ -136,11 +141,11 @@ function windArrowPlugin(windDirectionDeg, dayGroups) {
         (u) => {
           const ctx = u.ctx;
           const xData = u.data[0];
-          const len = 7 * u.pxRatio;
-          const y = u.bbox.top - 13 * u.pxRatio;
+          const len = 7 * uPlot.pxRatio;
+          const y = u.bbox.top - 13 * uPlot.pxRatio;
           ctx.save();
           ctx.strokeStyle = COLOR_WIND;
-          ctx.lineWidth = 1.3 * u.pxRatio;
+          ctx.lineWidth = 1.3 * uPlot.pxRatio;
           ctx.lineCap = "round";
           dayGroups.forEach(({ startIdx, endIdx }) => {
             const centerIdx = Math.round((startIdx + endIdx) / 2);
