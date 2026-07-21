@@ -18,6 +18,7 @@ const els = {
   nowTemp: $("now-temp"),
   nowConditions: $("now-conditions"),
   nowDetail: $("now-detail"),
+  hourlySection: $("hourly-section"),
   chartHourly: $("chart-hourly"),
   legendToggle: $("legend-toggle"),
   legendRow: $("legend-row"),
@@ -143,6 +144,7 @@ els.refreshBtn.addEventListener("click", () => {
 
 els.legendToggle.addEventListener("click", () => {
   els.legendRow.hidden = !els.legendRow.hidden;
+  els.hourlySection.classList.toggle("legend-hidden", els.legendRow.hidden);
 });
 
 if ("serviceWorker" in navigator) {

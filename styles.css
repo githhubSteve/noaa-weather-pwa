@@ -107,6 +107,14 @@ main { max-width: 720px; margin: 0 auto; padding: 0 1rem; }
   padding: 1rem;
   margin-bottom: 1rem;
 }
+/* Legend hidden (default): trim the section's bottom padding since there's
+   nothing below the chart to give it room for. Legend visible: normal 1rem
+   padding applies below it, and the section just grows taller to fit --
+   nothing here constrains its height, so it naturally expands downward
+   rather than shrinking the chart to make room. */
+.hourly-section.legend-hidden {
+  padding-bottom: 0.35rem;
+}
 .chart-section h2 {
   font-size: 0.85rem;
   text-transform: uppercase;
@@ -133,7 +141,7 @@ main { max-width: 720px; margin: 0 auto; padding: 0 1rem; }
 }
 .chart-hourly {
   width: 100%;
-  height: 240px;
+  height: 420px;
 }
 
 .legend-row {
