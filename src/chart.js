@@ -7,7 +7,7 @@ const COLOR_WIND = "#3ddc72";
 const COLOR_PRECIP = "#4fa3ff";
 const COLOR_DEWPOINT = "#38bdf8";
 const COLOR_HUMIDITY = "#a78bfa";
-const COLOR_CLOUD = "#94a3b8";
+const COLOR_CLOUD = "#ffffff";
 const AXIS_COLOR = "#f3f6fc";
 const LABEL_FONT_SIZE = 11;
 const LABEL_FONT_FAMILY = "-apple-system, BlinkMacSystemFont, sans-serif";
@@ -201,7 +201,7 @@ function makeHourlyChart(
     { data: temperatureF, label: "Temperature (°F)", color: COLOR_TEMP, width: 1, showLow: true },
     { data: windSpeedMph, label: "Wind Speed (mph)", color: COLOR_WIND, width: 1, showLow: false },
     { data: precipPct, label: "Precip Chance (%)", color: COLOR_PRECIP, width: 0.5, dash: [6, 4], showLow: false },
-    { data: dewpointF, label: "Dew Point (°F)", color: COLOR_DEWPOINT, width: 1, showLow: true },
+    { data: dewpointF, label: "Dew Point (°F)", color: COLOR_DEWPOINT, width: 1, showLow: false },
     { data: relativeHumidity, label: "Humidity (%)", color: COLOR_HUMIDITY, width: 0.5, showLow: false },
     { data: skyCover, label: "Cloud Cover (%)", color: COLOR_CLOUD, width: 0.5, dash: [2, 3], showLow: false },
   ]);
