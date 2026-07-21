@@ -5,6 +5,8 @@
 const COLOR_TEMP = "#e8d44f";
 const COLOR_WIND = "#3ddc72";
 const COLOR_PRECIP = "#4fa3ff";
+const AXIS_COLOR = "#f3f6fc";
+const LABEL_FONT = "300 11px -apple-system, BlinkMacSystemFont, sans-serif";
 
 // Fixed civil-twilight approximation (8pm-6am) rather than a real sunrise/sunset
 // calculation -- good enough for a background shading cue, not worth a second
@@ -67,35 +69,39 @@ function dayNightBackgroundPlugin() {
   };
 }
 
-// Labels only each day's temperature high and low (not every point) -- the
-// classic weather-app "H/L" convention, and the only way to keep labels
-// legible once 7 days are squeezed into one non-scrolling chart width.
-function dailyHighLowPlugin(tempSeriesIdx, dayGroups) {
+// Labels each day's extreme point(s) instead of every hour -- the only label
+// density that stays legible once 7 days are squeezed into one non-scrolling
+// chart width. Temperature gets both high and low (the classic "H/L"
+// convention); wind and precip only get a daily high.
+function dailyExtremesPlugin(seriesConfigs, dayGroups) {
   return {
     hooks: {
       draw: [
         (u) => {
           const ctx = u.ctx;
           const xData = u.data[0];
-          const temp = u.data[tempSeriesIdx];
           ctx.save();
-          ctx.font = "11px -apple-system, BlinkMacSystemFont, sans-serif";
+          ctx.font = LABEL_FONT;
           ctx.textAlign = "center";
-          ctx.fillStyle = COLOR_TEMP;
-          dayGroups.forEach(({ startIdx, endIdx }) => {
-            let hiIdx = startIdx;
-            let loIdx = startIdx;
-            for (let i = startIdx; i <= endIdx; i++) {
-              if (temp[i] == null) continue;
-              if (temp[i] > temp[hiIdx]) hiIdx = i;
-              if (temp[i] < temp[loIdx]) loIdx = i;
-            }
-            [hiIdx, loIdx].forEach((idx) => {
-              const v = temp[idx];
-              if (v == null) return;
-              const x = u.valToPos(xData[idx], "x", true);
-              const y = u.valToPos(v, "y", true);
-              ctx.fillText(Math.round(v), x, y - 8);
+          seriesConfigs.forEach(({ idx, color, showLow }) => {
+            const series = u.data[idx];
+            ctx.fillStyle = color;
+            dayGroups.forEach(({ startIdx, endIdx }) => {
+              let hiIdx = startIdx;
+              let loIdx = startIdx;
+              for (let i = startIdx; i <= endIdx; i++) {
+                if (series[i] == null) continue;
+                if (series[i] > series[hiIdx]) hiIdx = i;
+                if (series[i] < series[loIdx]) loIdx = i;
+              }
+              const idxsToLabel = showLow ? [hiIdx, loIdx] : [hiIdx];
+              idxsToLabel.forEach((idx2) => {
+                const v = series[idx2];
+                if (v == null) return;
+                const x = u.valToPos(xData[idx2], "x", true);
+                const y = u.valToPos(v, "y", true);
+                ctx.fillText(Math.round(v), x, y - 8);
+              });
             });
           });
           ctx.restore();
@@ -108,78 +114,55 @@ function dailyHighLowPlugin(tempSeriesIdx, dayGroups) {
 // Combined temperature / wind speed / precip-probability line chart, all
 // sharing one y-scale (mirrors the reference app's layout), fit to the
 // container's actual width so the full 7-day window shows with no scrolling.
+// Day names are rendered as the chart's own native x-axis (custom splits/
+// values at each day's center) rather than a separately-positioned HTML row --
+// that guarantees they land exactly under their matching day/night band,
+// since both are drawn through the same uPlot coordinate system.
 function makeHourlyChart(container, timesMs, temperatureF, windSpeedMph, precipPct) {
   const width = container.clientWidth;
   const yMax = niceMax([...temperatureF, ...windSpeedMph, ...precipPct]);
   const dayGroups = groupByDay(timesMs);
+  const xData = timesMs.map((t) => t / 1000);
+  const dayCenters = dayGroups.map((g) => (xData[g.startIdx] + xData[g.endIdx]) / 2);
 
-  const data = [timesMs.map((t) => t / 1000), temperatureF, windSpeedMph, precipPct];
+  const data = [xData, temperatureF, windSpeedMph, precipPct];
 
   const opts = {
     width,
     height: 240,
+    padding: [8, 8, 8, 8],
     scales: { x: { time: true }, y: { range: [0, yMax] } },
-    axes: [{ show: false }, { label: "" }],
+    axes: [
+      {
+        stroke: AXIS_COLOR,
+        grid: { show: false },
+        ticks: { show: false },
+        splits: () => dayCenters,
+        filter: (u, splits) => splits.map((_, i) => i),
+        values: (u, splits) => splits.map((s) => new Date(s * 1000).toLocaleDateString([], { weekday: "short" })),
+      },
+      { stroke: AXIS_COLOR, label: "" },
+    ],
     series: [
       {},
-      { label: "Temperature (°F)", stroke: COLOR_TEMP, width: 2, points: { show: false } },
-      { label: "Wind Speed (mph)", stroke: COLOR_WIND, width: 2, points: { show: false } },
-      { label: "Precip Chance (%)", stroke: COLOR_PRECIP, width: 1.5, dash: [6, 4], points: { show: false } },
+      { label: "Temperature (°F)", stroke: COLOR_TEMP, width: 1, points: { show: false } },
+      { label: "Wind Speed (mph)", stroke: COLOR_WIND, width: 1, points: { show: false } },
+      { label: "Precip Chance (%)", stroke: COLOR_PRECIP, width: 0.5, dash: [6, 4], points: { show: false } },
     ],
-    plugins: [dayNightBackgroundPlugin(), dailyHighLowPlugin(1, dayGroups)],
+    plugins: [
+      dayNightBackgroundPlugin(),
+      dailyExtremesPlugin(
+        [
+          { idx: 1, color: COLOR_TEMP, showLow: true },
+          { idx: 2, color: COLOR_WIND, showLow: false },
+          { idx: 3, color: COLOR_PRECIP, showLow: false },
+        ],
+        dayGroups
+      ),
+    ],
     legend: { show: false },
   };
   return new uPlot(opts, data, container);
 }
 
-// Plain div/CSS bar strip for QPF (liquid precip amount), fit to the same
-// container width as the hourly chart above (no scrolling, no fixed px/hour).
-// Not a uPlot series: the published uPlot build doesn't bundle a bars path
-// renderer (only `points`), and guessing at its undocumented custom-paths
-// return shape isn't worth the risk for something this simple.
-function makeQpfBarStrip(container, timesMs, qpfIn) {
-  const width = container.clientWidth;
-  const height = 60;
-  const maxVal = Math.max(0.1, ...qpfIn.filter((v) => v != null));
-  const axisMax = Math.ceil(maxVal / 0.05) * 0.05;
-  const slotWidth = width / timesMs.length;
-
-  container.innerHTML = "";
-  container.style.width = `${width}px`;
-  container.style.height = `${height}px`;
-
-  const barWidth = Math.max(1, slotWidth * 0.7);
-  qpfIn.forEach((v, i) => {
-    if (!v) return;
-    const barHeight = Math.round((v / axisMax) * height);
-    const bar = document.createElement("div");
-    bar.className = "qpf-bar";
-    bar.style.left = `${i * slotWidth + slotWidth / 2 - barWidth / 2}px`;
-    bar.style.width = `${barWidth}px`;
-    bar.style.height = `${barHeight}px`;
-    container.appendChild(bar);
-  });
-
-  return { axisMax };
-}
-
-// Day-name labels (e.g. "Wed") centered under each calendar day's span,
-// replacing the old hourly time axis + scrubber now that days are squeezed
-// together with no scroll to seek through.
-function renderDayAxis(container, timesMs) {
-  const width = container.clientWidth;
-  const slotWidth = width / timesMs.length;
-  const dayGroups = groupByDay(timesMs);
-
-  container.innerHTML = "";
-  container.style.width = `${width}px`;
-  dayGroups.forEach(({ dateStr, startIdx, endIdx }) => {
-    const centerIdx = (startIdx + endIdx) / 2;
-    const span = document.createElement("span");
-    span.style.left = `${centerIdx * slotWidth + slotWidth / 2}px`;
-    span.textContent = new Date(dateStr).toLocaleDateString([], { weekday: "short" });
-    container.appendChild(span);
-  });
-}
-
-export { makeHourlyChart, makeQpfBarStrip, renderDayAxis, groupByDay };
+export { makeHourlyChart, groupByDay };

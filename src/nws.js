@@ -85,10 +85,9 @@ async function fetchHourlyForecast(hourlyUrl) {
 
 const CELSIUS_TO_F = (c) => (c * 9) / 5 + 32;
 const KMH_TO_MPH = (k) => k * 0.621371;
-const MM_TO_IN = (mm) => mm / 25.4;
 
-// Builds aligned hourly series (temp °F, precip %, dewpoint °F, humidity %, sky cover %)
-// for the next `hours` hours, starting now, from the raw gridpoint payload.
+// Builds aligned hourly series (temp °F, wind mph, precip chance %) for the
+// next `hours` hours, starting now, from the raw gridpoint payload.
 async function fetchGridSeries(gridpointUrl, hours = 48) {
   const data = await getJson(gridpointUrl);
   const props = data.properties;
@@ -104,12 +103,8 @@ async function fetchGridSeries(gridpointUrl, hours = 48) {
   return {
     timesMs: grid,
     temperatureF: seriesFor("temperature", CELSIUS_TO_F),
-    dewpointF: seriesFor("dewpoint", CELSIUS_TO_F),
-    relativeHumidity: seriesFor("relativeHumidity"),
-    skyCover: seriesFor("skyCover"),
     windSpeedMph: seriesFor("windSpeed", KMH_TO_MPH),
     probabilityOfPrecipitation: seriesFor("probabilityOfPrecipitation"),
-    quantitativePrecipitationIn: seriesFor("quantitativePrecipitation", MM_TO_IN),
   };
 }
 

@@ -1,7 +1,7 @@
 import { fetchPointMeta, fetchHourlyForecast, fetchGridSeries } from "./src/nws.js";
 import { fetchPollen } from "./src/pollen.js";
 import { getSavedLocation, resolveLocationFromZip } from "./src/location.js";
-import { makeHourlyChart, makeQpfBarStrip, renderDayAxis } from "./src/chart.js";
+import { makeHourlyChart } from "./src/chart.js";
 
 const HOURS_TO_SHOW = 168; // 7 days
 
@@ -19,8 +19,6 @@ const els = {
   nowConditions: $("now-conditions"),
   nowDetail: $("now-detail"),
   chartHourly: $("chart-hourly"),
-  chartQpf: $("chart-qpf"),
-  dayAxis: $("day-axis"),
   pollenIndex: $("pollen-index"),
   pollenTriggers: $("pollen-triggers"),
   errorPanel: $("error-panel"),
@@ -66,9 +64,6 @@ async function loadAll(location) {
       gridSeries.windSpeedMph,
       gridSeries.probabilityOfPrecipitation
     );
-    makeQpfBarStrip(els.chartQpf, gridSeries.timesMs, gridSeries.quantitativePrecipitationIn);
-    renderDayAxis(els.dayAxis, gridSeries.timesMs);
-
     cacheLastGood({ location, now, gridSeries });
   } catch (err) {
     console.error(err);

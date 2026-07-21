@@ -90,28 +90,6 @@ main { max-width: 720px; margin: 0 auto; padding: 0 1rem; }
 }
 .chart-hourly { height: 240px; }
 
-.chart-qpf-wrap {
-  position: relative;
-  border-top: 1px solid var(--border);
-  margin-top: 0.25rem;
-}
-.chart-qpf { position: relative; }
-.qpf-bar {
-  position: absolute;
-  bottom: 0;
-  background: rgba(79, 163, 255, 0.6);
-  border-radius: 2px 2px 0 0;
-}
-
-.day-axis {
-  position: relative;
-  height: 1.2rem;
-  font-size: 0.75rem;
-  font-weight: 600;
-  color: var(--muted);
-}
-.day-axis span { position: absolute; transform: translateX(-50%); white-space: nowrap; }
-
 .legend-row {
   display: flex;
   flex-wrap: wrap;
