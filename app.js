@@ -78,7 +78,9 @@ async function loadAll(location) {
     if (!location.zip) throw new Error("no ZIP set for pollen lookup");
     const pollen = await fetchPollen(location.zip);
     els.pollenIndex.textContent = pollen.index.toFixed(1);
-    els.pollenTriggers.textContent = pollen.triggers.join(", ") || "No major triggers today";
+    els.pollenTriggers.textContent =
+      pollen.triggersByType.map((g) => `${g.type}: ${g.names.join(", ")}`).join(" · ") ||
+      "No major triggers today";
   } catch (err) {
     console.error(err);
     els.pollenIndex.textContent = "--";
