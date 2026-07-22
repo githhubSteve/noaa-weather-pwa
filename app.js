@@ -83,7 +83,7 @@ async function loadAll(location) {
     const label = (type) => type.charAt(0) + type.slice(1).toLowerCase();
     els.pollenIndex.textContent = pollen.categories
       .map((c) => `${label(c.type)}: ${c.category ?? "N/A"}`)
-      .join(" · ");
+      .join("\n");
     els.pollenTriggers.textContent =
       pollen.inSeasonPlants.map((p) => p.name).join(", ") || "No plants in season today";
   } catch (err) {
