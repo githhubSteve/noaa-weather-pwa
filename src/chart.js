@@ -214,7 +214,7 @@ function buildCombinedChart(container, timesMs, seriesDefs, extraPlugins = []) {
     axes: [
       {
         stroke: AXIS_COLOR,
-        grid: { show: true, stroke: "rgba(255,255,255,0.14)", width: 1 },
+        grid: { show: false },
         ticks: { show: false },
         splits: () => dayCenters,
         filter: (u, splits) => splits,

@@ -12,15 +12,6 @@
 <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
-<header class="topbar">
-  <h1 id="location-name">Loading location…</h1>
-  <div class="header-actions">
-    <span id="updated-at" class="updated-at"></span>
-    <button id="refresh-btn" title="Refresh">&#8635;</button>
-    <button id="change-location-btn" title="Change location">&#9881;</button>
-  </div>
-</header>
-
 <main>
   <section id="location-setup" class="location-setup" hidden>
     <h2>Set your location</h2>
@@ -62,6 +53,15 @@
 
   <section id="error-panel" class="error-panel" hidden></section>
 </main>
+
+<header class="bottombar">
+  <h1 id="location-name">Loading location…</h1>
+  <div class="header-actions">
+    <span id="updated-at" class="updated-at"></span>
+    <button id="refresh-btn" title="Refresh">&#8635;</button>
+    <button id="change-location-btn" title="Change location">&#9881;</button>
+  </div>
+</header>
 
 <script src="vendor/uplot.iife.min.js"></script>
 <script type="module" src="app.js"></script>
