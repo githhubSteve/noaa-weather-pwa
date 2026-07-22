@@ -1,48 +1,39 @@
-// pollen.com has no CORS headers, so this goes through a small Cloudflare Worker
-// proxy that just re-forwards the request and adds Access-Control-Allow-Origin.
+// Google Pollen API requires an API key, which must never be shipped to the
+// browser (anyone could read it from page source and run up billable calls
+// against the account). This goes through a Cloudflare Worker that holds the
+// key server-side and re-forwards the request, adding CORS back on the way
+// out (Google's API isn't meant to be called with a bare key from client JS).
 const PROXY_BASE = "https://noaa-weather-pollen-proxy.fancy-meadow-47bd.workers.dev";
 
-// pollen.com only exposes one overall index, no separate tree/grass/weed
-// scores (checked -- every paid provider that has those, Ambee/Tomorrow.io/
-// Google, wants $100+/mo). But each currently-active plant in `Triggers` is
-// already tagged with a PlantType (Grass, Ragweed, presumably Tree), so we
-// can at least group today's triggers by that category for free instead of
-// showing them as one flat list.
-const CATEGORY_ORDER = ["Tree", "Grass", "Ragweed", "Weed"];
+const CATEGORY_ORDER = ["TREE", "GRASS", "WEED"];
 
-function groupTriggersByType(triggers) {
-  const byType = new Map();
-  triggers.forEach(({ Name, PlantType }) => {
-    const type = PlantType || "Other";
-    if (!byType.has(type)) byType.set(type, []);
-    byType.get(type).push(Name);
-  });
-
-  return [...byType.entries()]
-    .sort(([a], [b]) => {
-      const ia = CATEGORY_ORDER.indexOf(a);
-      const ib = CATEGORY_ORDER.indexOf(b);
-      if (ia === -1 && ib === -1) return a.localeCompare(b);
-      if (ia === -1) return 1;
-      if (ib === -1) return -1;
-      return ia - ib;
-    })
-    .map(([type, names]) => ({ type, names }));
-}
-
-async function fetchPollen(zip) {
-  const res = await fetch(`${PROXY_BASE}/pollen/${zip}`);
+async function fetchPollen(lat, lon) {
+  const res = await fetch(`${PROXY_BASE}/pollen/${lat}/${lon}`);
   if (!res.ok) {
     throw new Error(`Pollen request failed: ${res.status} ${res.statusText}`);
   }
   const data = await res.json();
-  const periods = data.Location.periods;
-  const today = periods.find((p) => p.Type === "Today") || periods[0];
-  return {
-    index: today.Index,
-    triggersByType: groupTriggersByType(today.Triggers),
-    displayLocation: data.Location.DisplayLocation,
-  };
+  const today = data.dailyInfo?.[0];
+  if (!today) {
+    throw new Error("No pollen forecast data for this location");
+  }
+
+  const categories = (today.pollenTypeInfo || [])
+    .slice()
+    .sort((a, b) => CATEGORY_ORDER.indexOf(a.code) - CATEGORY_ORDER.indexOf(b.code))
+    .map((pt) => ({
+      type: pt.code, // "TREE" | "GRASS" | "WEED"
+      displayName: pt.displayName,
+      value: pt.indexInfo?.value ?? null,
+      category: pt.indexInfo?.category ?? null,
+      inSeason: pt.inSeason,
+    }));
+
+  const inSeasonPlants = (today.plantInfo || [])
+    .filter((p) => p.inSeason)
+    .map((p) => ({ name: p.displayName, type: p.plantDescription?.type }));
+
+  return { categories, inSeasonPlants };
 }
 
 export { fetchPollen };

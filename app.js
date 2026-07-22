@@ -79,12 +79,13 @@ async function loadAll(location) {
   }
 
   try {
-    if (!location.zip) throw new Error("no ZIP set for pollen lookup");
-    const pollen = await fetchPollen(location.zip);
-    els.pollenIndex.textContent = pollen.index.toFixed(1);
+    const pollen = await fetchPollen(location.lat, location.lon);
+    const label = (type) => type.charAt(0) + type.slice(1).toLowerCase();
+    els.pollenIndex.textContent = pollen.categories
+      .map((c) => `${label(c.type)}: ${c.category ?? "N/A"}`)
+      .join(" · ");
     els.pollenTriggers.textContent =
-      pollen.triggersByType.map((g) => `${g.type}: ${g.names.join(", ")}`).join(" · ") ||
-      "No major triggers today";
+      pollen.inSeasonPlants.map((p) => p.name).join(", ") || "No plants in season today";
   } catch (err) {
     console.error(err);
     els.pollenIndex.textContent = "--";

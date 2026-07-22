@@ -1,39 +1,41 @@
-// Cloudflare Worker: CORS proxy for pollen.com's unofficial forecast API.
-// pollen.com sends no Access-Control-Allow-Origin header, so the browser
-// can't call it directly from the PWA's origin -- this worker re-forwards
-// the request server-side (no CORS restriction there) and adds the header
-// back on the way out.
+// Cloudflare Worker: proxy for the Google Pollen API.
+//
+// Two jobs: (1) keep the API key server-side -- this Worker is the only
+// place that ever sees it (set via `wrangler secret put GOOGLE_POLLEN_API_KEY`,
+// never committed, never shipped to the browser), and (2) add back a CORS
+// header, since Google's API isn't meant to be called with a key exposed in
+// client-side JS in the first place.
 //
 // Deploy: wrangler deploy  (see worker/wrangler.toml)
-// Usage:  GET https://<your-worker>.workers.dev/pollen/76244
+// Usage:  GET https://<your-worker>.workers.dev/pollen/{lat}/{lon}
 
 const ALLOWED_ORIGIN = "https://githhubsteve.github.io";
 
 export default {
-  async fetch(request) {
+  async fetch(request, env) {
     const url = new URL(request.url);
-    const match = url.pathname.match(/^\/pollen\/(\d{5})$/);
+    const match = url.pathname.match(/^\/pollen\/(-?\d+(?:\.\d+)?)\/(-?\d+(?:\.\d+)?)$/);
 
     if (!match) {
-      return new Response("Not found. Use /pollen/{zip}", { status: 404 });
+      return new Response("Not found. Use /pollen/{lat}/{lon}", { status: 404 });
     }
-    const zip = match[1];
+    const [, lat, lon] = match;
 
-    const upstream = await fetch(`https://www.pollen.com/api/forecast/current/pollen/${zip}`, {
-      headers: {
-        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
-        Referer: "https://www.pollen.com/",
-        Accept: "application/json",
-      },
-    });
+    const googleUrl = new URL("https://pollen.googleapis.com/v1/forecast:lookup");
+    googleUrl.searchParams.set("key", env.GOOGLE_POLLEN_API_KEY);
+    googleUrl.searchParams.set("location.latitude", lat);
+    googleUrl.searchParams.set("location.longitude", lon);
+    googleUrl.searchParams.set("days", "1");
 
+    const upstream = await fetch(googleUrl);
     const body = await upstream.text();
+
     return new Response(body, {
       status: upstream.status,
       headers: {
         "Content-Type": "application/json",
         "Access-Control-Allow-Origin": ALLOWED_ORIGIN,
-        "Cache-Control": "public, max-age=3600", // pollen.com updates daily; avoid hammering it
+        "Cache-Control": "public, max-age=3600", // pollen data updates daily
       },
     });
   },
