@@ -1,6 +1,5 @@
-import { fetchPointMeta, fetchHourlyForecast, fetchGridSeries } from "./src/nws.js";
+import { fetchPointMeta, fetchGridSeries, fetchLatestObservation } from "./src/nws.js";
 import { fetchPollen } from "./src/pollen.js";
-import { fetchSunTimes } from "./src/sun.js";
 import { getSavedLocation, resolveLocationFromZip } from "./src/location.js";
 import { makeHourlyChart } from "./src/chart.js";
 
@@ -49,17 +48,29 @@ async function loadAll(location) {
   clearError();
   els.locationName.textContent = location.cityState;
 
+  let meta;
   try {
-    const meta = await fetchPointMeta(location.lat, location.lon);
-    const [hourly, gridSeries] = await Promise.all([
-      fetchHourlyForecast(meta.hourlyUrl),
+    meta = await fetchPointMeta(location.lat, location.lon);
+
+    const fmt = (d) => d.toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
+    els.nowSun.textContent =
+      meta.sunrise && meta.sunset ? `Sunrise ${fmt(meta.sunrise)}\nSunset ${fmt(meta.sunset)}` : "";
+  } catch (err) {
+    console.error(err);
+    els.nowSun.textContent = "";
+  }
+
+  try {
+    if (!meta) throw new Error("location metadata unavailable");
+    const [obs, gridSeries] = await Promise.all([
+      fetchLatestObservation(meta.stationsUrl),
       fetchGridSeries(meta.gridpointUrl, HOURS_TO_SHOW),
     ]);
 
-    const now = hourly[0];
-    els.nowTemp.textContent = `${now.temperature}°`;
-    els.nowConditions.textContent = now.shortForecast;
-    els.nowDetail.textContent = `Wind ${now.windSpeed} ${now.windDirection}`;
+    els.nowTemp.textContent = obs.temperatureF != null ? `${Math.round(obs.temperatureF)}°` : "--°";
+    els.nowConditions.textContent = obs.textDescription || "--";
+    els.nowDetail.textContent =
+      obs.windSpeedMph != null ? `Wind ${Math.round(obs.windSpeedMph)} mph ${obs.windDirection}` : "";
 
     if (hourlyChart) hourlyChart.destroy();
     hourlyChart = makeHourlyChart(
@@ -73,20 +84,11 @@ async function loadAll(location) {
       gridSeries.relativeHumidity,
       gridSeries.skyCover
     );
-    cacheLastGood({ location, now, gridSeries });
+    cacheLastGood({ location, obs, gridSeries });
   } catch (err) {
     console.error(err);
     showError(`Weather data unavailable: ${err.message}`);
     restoreLastGood();
-  }
-
-  try {
-    const { sunrise, sunset } = await fetchSunTimes(location.lat, location.lon);
-    const fmt = (d) => d.toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
-    els.nowSun.textContent = `Sunrise ${fmt(sunrise)}\nSunset ${fmt(sunset)}`;
-  } catch (err) {
-    console.error(err);
-    els.nowSun.textContent = "";
   }
 
   try {
@@ -116,9 +118,10 @@ function restoreLastGood() {
   const raw = localStorage.getItem(CACHE_KEY);
   if (!raw) return;
   const snap = JSON.parse(raw);
-  els.nowTemp.textContent = `${snap.now.temperature}°`;
-  els.nowConditions.textContent = snap.now.shortForecast;
-  els.nowDetail.textContent = `Wind ${snap.now.windSpeed} ${snap.now.windDirection}`;
+  els.nowTemp.textContent = snap.obs.temperatureF != null ? `${Math.round(snap.obs.temperatureF)}°` : "--°";
+  els.nowConditions.textContent = snap.obs.textDescription || "--";
+  els.nowDetail.textContent =
+    snap.obs.windSpeedMph != null ? `Wind ${Math.round(snap.obs.windSpeedMph)} mph ${snap.obs.windDirection}` : "";
   els.updatedAt.textContent = `Stale — last updated ${new Date(snap.cachedAt).toLocaleString()}`;
 }
 

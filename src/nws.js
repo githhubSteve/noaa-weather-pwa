@@ -66,25 +66,52 @@ function hourlyGrid(startMs, hours) {
 async function fetchPointMeta(lat, lon) {
   const points = await getJson(`https://api.weather.gov/points/${lat},${lon}`);
   const props = points.properties;
+  const astro = props.astronomicalData;
   return {
     gridId: props.gridId,
     gridX: props.gridX,
     gridY: props.gridY,
     hourlyUrl: props.forecastHourly,
     gridpointUrl: props.forecastGridData,
+    stationsUrl: props.observationStations,
+    // NWS already returns real sunrise/sunset from this same /points/ call --
+    // no separate API needed for it.
+    sunrise: astro?.sunrise ? new Date(astro.sunrise) : null,
+    sunset: astro?.sunset ? new Date(astro.sunset) : null,
     cityState: props.relativeLocation
       ? `${props.relativeLocation.properties.city}, ${props.relativeLocation.properties.state}`
       : null,
   };
 }
 
-async function fetchHourlyForecast(hourlyUrl) {
-  const data = await getJson(hourlyUrl);
-  return data.properties.periods;
-}
-
 const CELSIUS_TO_F = (c) => (c * 9) / 5 + 32;
 const KMH_TO_MPH = (k) => k * 0.621371;
+
+const COMPASS_POINTS = [
+  "N", "NNE", "NE", "ENE", "E", "ESE", "SE", "SSE",
+  "S", "SSW", "SW", "WSW", "W", "WNW", "NW", "NNW",
+];
+function degToCompass(deg) {
+  if (deg == null) return "";
+  return COMPASS_POINTS[Math.round(deg / 22.5) % 16];
+}
+
+// Real measured conditions from the nearest physical station, not a forecast
+// guess for the current hour -- station reports the actual current instant,
+// updated roughly hourly.
+async function fetchLatestObservation(stationsUrl) {
+  const stations = await getJson(stationsUrl);
+  const stationUrl = stations.features[0].id;
+  const obs = await getJson(`${stationUrl}/observations/latest`);
+  const props = obs.properties;
+  return {
+    temperatureF: props.temperature?.value != null ? CELSIUS_TO_F(props.temperature.value) : null,
+    windSpeedMph: props.windSpeed?.value != null ? KMH_TO_MPH(props.windSpeed.value) : null,
+    windDirection: degToCompass(props.windDirection?.value),
+    textDescription: props.textDescription,
+    timestamp: props.timestamp,
+  };
+}
 
 // Builds aligned hourly series (temp °F, wind mph, precip chance %, dew point
 // °F, humidity %, cloud cover %) for the next `hours` hours, starting now,
@@ -115,8 +142,8 @@ async function fetchGridSeries(gridpointUrl, hours = 48) {
 
 export {
   fetchPointMeta,
-  fetchHourlyForecast,
   fetchGridSeries,
+  fetchLatestObservation,
   parseIsoDuration,
   parseValueSeries,
   sampleAtGrid,
