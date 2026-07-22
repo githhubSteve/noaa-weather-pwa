@@ -1,5 +1,6 @@
 import { fetchPointMeta, fetchHourlyForecast, fetchGridSeries } from "./src/nws.js";
 import { fetchPollen } from "./src/pollen.js";
+import { fetchSunTimes } from "./src/sun.js";
 import { getSavedLocation, resolveLocationFromZip } from "./src/location.js";
 import { makeHourlyChart } from "./src/chart.js";
 
@@ -18,6 +19,7 @@ const els = {
   nowTemp: $("now-temp"),
   nowConditions: $("now-conditions"),
   nowDetail: $("now-detail"),
+  nowSun: $("now-sun"),
   hourlySection: $("hourly-section"),
   chartHourly: $("chart-hourly"),
   legendToggle: $("legend-toggle"),
@@ -76,6 +78,15 @@ async function loadAll(location) {
     console.error(err);
     showError(`Weather data unavailable: ${err.message}`);
     restoreLastGood();
+  }
+
+  try {
+    const { sunrise, sunset } = await fetchSunTimes(location.lat, location.lon);
+    const fmt = (d) => d.toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
+    els.nowSun.textContent = `Sunrise ${fmt(sunrise)}\nSunset ${fmt(sunset)}`;
+  } catch (err) {
+    console.error(err);
+    els.nowSun.textContent = "";
   }
 
   try {

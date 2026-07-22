@@ -214,7 +214,7 @@ function buildCombinedChart(container, timesMs, seriesDefs, extraPlugins = []) {
     axes: [
       {
         stroke: AXIS_COLOR,
-        grid: { show: false },
+        grid: { show: true, stroke: "rgba(255,255,255,0.14)", width: 1 },
         ticks: { show: false },
         splits: () => dayCenters,
         filter: (u, splits) => splits,
@@ -222,6 +222,7 @@ function buildCombinedChart(container, timesMs, seriesDefs, extraPlugins = []) {
       },
       {
         stroke: AXIS_COLOR,
+        grid: { show: true, stroke: "rgba(255,255,255,0.14)", width: 1 },
         // No `label` key at all (not even ""): uPlot reserves an extra fixed
         // ~30px "axis title" gutter whenever `label` is non-null, even an
         // empty string -- that hidden reservation was the big blank strip
