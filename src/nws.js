@@ -74,6 +74,7 @@ async function fetchPointMeta(lat, lon) {
     hourlyUrl: props.forecastHourly,
     gridpointUrl: props.forecastGridData,
     stationsUrl: props.observationStations,
+    radarStation: props.radarStation,
     // NWS already returns real sunrise/sunset from this same /points/ call --
     // no separate API needed for it.
     sunrise: astro?.sunrise ? new Date(astro.sunrise) : null,

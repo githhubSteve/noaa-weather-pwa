@@ -22,6 +22,8 @@ const els = {
   nowSun: $("now-sun"),
   hourlySection: $("hourly-section"),
   chartHourly: $("chart-hourly"),
+  radarSection: $("radar-section"),
+  radarImage: $("radar-image"),
   legendToggle: $("legend-toggle"),
   legendRow: $("legend-row"),
   pollenIndex: $("pollen-index"),
@@ -66,6 +68,11 @@ async function loadAll(location) {
     const fmt = (d) => d.toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
     els.nowSun.textContent =
       meta.sunrise && meta.sunset ? `Sunrise ${fmt(meta.sunrise)}\nSunset ${fmt(meta.sunset)}` : "";
+
+    if (meta.radarStation) {
+      els.radarImage.src = `https://radar.weather.gov/ridge/standard/${meta.radarStation}_loop.gif`;
+      els.radarSection.hidden = false;
+    }
   } catch (err) {
     console.error(err);
     els.nowSun.textContent = "";
