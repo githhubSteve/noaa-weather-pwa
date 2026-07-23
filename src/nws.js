@@ -87,15 +87,6 @@ async function fetchPointMeta(lat, lon) {
 const CELSIUS_TO_F = (c) => (c * 9) / 5 + 32;
 const KMH_TO_MPH = (k) => k * 0.621371;
 
-const COMPASS_POINTS = [
-  "N", "NNE", "NE", "ENE", "E", "ESE", "SE", "SSE",
-  "S", "SSW", "SW", "WSW", "W", "WNW", "NW", "NNW",
-];
-function degToCompass(deg) {
-  if (deg == null) return "";
-  return COMPASS_POINTS[Math.round(deg / 22.5) % 16];
-}
-
 // Real measured conditions from the nearest physical station, not a forecast
 // guess for the current hour -- station reports the actual current instant,
 // updated roughly hourly.
@@ -106,8 +97,6 @@ async function fetchLatestObservation(stationsUrl) {
   const props = obs.properties;
   return {
     temperatureF: props.temperature?.value != null ? CELSIUS_TO_F(props.temperature.value) : null,
-    windSpeedMph: props.windSpeed?.value != null ? KMH_TO_MPH(props.windSpeed.value) : null,
-    windDirection: degToCompass(props.windDirection?.value),
     textDescription: props.textDescription,
     timestamp: props.timestamp,
   };

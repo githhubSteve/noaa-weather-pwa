@@ -19,7 +19,6 @@ const els = {
   nowDate: $("now-date"),
   nowTemp: $("now-temp"),
   nowConditions: $("now-conditions"),
-  nowDetail: $("now-detail"),
   nowSun: $("now-sun"),
   hourlySection: $("hourly-section"),
   chartHourly: $("chart-hourly"),
@@ -81,8 +80,6 @@ async function loadAll(location) {
 
     els.nowTemp.textContent = obs.temperatureF != null ? `${Math.round(obs.temperatureF)}°` : "--°";
     els.nowConditions.textContent = obs.textDescription || "--";
-    els.nowDetail.textContent =
-      obs.windSpeedMph != null ? `Wind ${Math.round(obs.windSpeedMph)} mph ${obs.windDirection}` : "";
 
     if (hourlyChart) hourlyChart.destroy();
     hourlyChart = makeHourlyChart(
@@ -132,8 +129,6 @@ function restoreLastGood() {
   const snap = JSON.parse(raw);
   els.nowTemp.textContent = snap.obs.temperatureF != null ? `${Math.round(snap.obs.temperatureF)}°` : "--°";
   els.nowConditions.textContent = snap.obs.textDescription || "--";
-  els.nowDetail.textContent =
-    snap.obs.windSpeedMph != null ? `Wind ${Math.round(snap.obs.windSpeedMph)} mph ${snap.obs.windDirection}` : "";
   els.updatedAt.textContent = `Stale — last updated ${new Date(snap.cachedAt).toLocaleString()}`;
 }
 
