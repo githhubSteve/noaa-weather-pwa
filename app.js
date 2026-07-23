@@ -15,6 +15,8 @@ const els = {
   locationSetup: $("location-setup"),
   locationForm: $("location-form"),
   zipInput: $("zip-input"),
+  nowDay: $("now-day"),
+  nowDate: $("now-date"),
   nowTemp: $("now-temp"),
   nowConditions: $("now-conditions"),
   nowDetail: $("now-detail"),
@@ -44,9 +46,19 @@ function showLocationSetup(show) {
   els.locationSetup.hidden = !show;
 }
 
+function formatDate(d) {
+  const mm = String(d.getMonth() + 1).padStart(2, "0");
+  const dd = String(d.getDate()).padStart(2, "0");
+  return `${mm}/${dd}/${d.getFullYear()}`;
+}
+
 async function loadAll(location) {
   clearError();
   els.locationName.textContent = location.cityState;
+
+  const today = new Date();
+  els.nowDay.textContent = today.toLocaleDateString([], { weekday: "long" });
+  els.nowDate.textContent = formatDate(today);
 
   let meta;
   try {
