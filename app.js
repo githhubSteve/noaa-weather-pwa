@@ -1,7 +1,8 @@
-import { fetchPointMeta, fetchGridSeries, fetchLatestObservation } from "./src/nws.js";
+import { fetchPointMeta, fetchGridSeries, fetchLatestObservation, compassDirection } from "./src/nws.js";
 import { fetchPollen } from "./src/pollen.js";
 import { getSavedLocation, resolveLocationFromZip } from "./src/location.js";
 import { makeHourlyChart } from "./src/chart.js";
+import { startRadarLoop } from "./src/radar.js";
 
 const HOURS_TO_SHOW = 168; // 7 days
 
@@ -22,6 +23,7 @@ const els = {
   nowSun: $("now-sun"),
   hourlySection: $("hourly-section"),
   chartHourly: $("chart-hourly"),
+  windReadout: $("wind-readout"),
   radarSection: $("radar-section"),
   radarImage: $("radar-image"),
   legendToggle: $("legend-toggle"),
@@ -32,6 +34,7 @@ const els = {
 };
 
 let hourlyChart = null;
+let stopRadarLoop = null;
 
 function showError(message) {
   els.errorPanel.hidden = false;
@@ -70,7 +73,8 @@ async function loadAll(location) {
       meta.sunrise && meta.sunset ? `Sunrise ${fmt(meta.sunrise)}\nSunset ${fmt(meta.sunset)}` : "";
 
     if (meta.radarStation) {
-      els.radarImage.src = `https://radar.weather.gov/ridge/standard/${meta.radarStation}_loop.gif`;
+      if (stopRadarLoop) stopRadarLoop();
+      stopRadarLoop = startRadarLoop(els.radarImage, meta.radarStation);
       els.radarSection.hidden = false;
     }
   } catch (err) {
@@ -87,6 +91,10 @@ async function loadAll(location) {
 
     els.nowTemp.textContent = obs.temperatureF != null ? `${Math.round(obs.temperatureF)}°` : "--°";
     els.nowConditions.textContent = obs.textDescription || "--";
+    els.windReadout.textContent =
+      obs.windSpeedMph != null
+        ? `${Math.round(obs.windSpeedMph)} mph ${compassDirection(obs.windDirectionDeg) ?? ""}`.trim()
+        : "";
 
     if (hourlyChart) hourlyChart.destroy();
     hourlyChart = makeHourlyChart(

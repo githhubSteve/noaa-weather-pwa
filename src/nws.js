@@ -88,6 +88,19 @@ async function fetchPointMeta(lat, lon) {
 const CELSIUS_TO_F = (c) => (c * 9) / 5 + 32;
 const KMH_TO_MPH = (k) => k * 0.621371;
 
+const COMPASS_POINTS = [
+  "N", "NNE", "NE", "ENE", "E", "ESE", "SE", "SSE",
+  "S", "SSW", "SW", "WSW", "W", "WNW", "NW", "NNW",
+];
+
+// Converts a meteorological wind-direction bearing (0=N, 90=E, ...) to a
+// 16-point compass label.
+function compassDirection(deg) {
+  if (deg == null) return null;
+  const idx = Math.round(deg / 22.5) % 16;
+  return COMPASS_POINTS[idx];
+}
+
 // Real measured conditions from the nearest physical station, not a forecast
 // guess for the current hour -- station reports the actual current instant,
 // updated roughly hourly.
@@ -100,6 +113,8 @@ async function fetchLatestObservation(stationsUrl) {
     temperatureF: props.temperature?.value != null ? CELSIUS_TO_F(props.temperature.value) : null,
     textDescription: props.textDescription,
     timestamp: props.timestamp,
+    windSpeedMph: props.windSpeed?.value != null ? KMH_TO_MPH(props.windSpeed.value) : null,
+    windDirectionDeg: props.windDirection?.value ?? null,
   };
 }
 
@@ -138,4 +153,5 @@ export {
   parseValueSeries,
   sampleAtGrid,
   hourlyGrid,
+  compassDirection,
 };
