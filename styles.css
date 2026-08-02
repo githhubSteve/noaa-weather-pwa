@@ -192,6 +192,13 @@ main { max-width: 720px; margin: 0 auto; padding: 0 1rem; }
 .legend-row[hidden] { display: none; }
 .legend-item { display: inline-flex; align-items: center; gap: 0.35rem; }
 .legend-item i { width: 0.7rem; height: 0.7rem; border-radius: 2px; display: inline-block; }
+/* Cloud cover's line is pure white to read against the dark chart canvas,
+   but that same white is invisible as label text against the light theme's
+   white panel background -- fall back to a visible neutral tone there. */
+.legend-cloud { color: #ffffff; }
+@media (prefers-color-scheme: light) {
+  .legend-cloud { color: #8a8a8a; }
+}
 
 .error-panel {
   background: #3a1f1f;
