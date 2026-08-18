@@ -237,6 +237,7 @@ function buildCombinedChart(container, timesMs, seriesDefs, extraPlugins = []) {
         stroke: s.color,
         width: s.width,
         dash: s.dash,
+        fill: s.fill,
         points: { show: false },
       })),
     ],
@@ -270,10 +271,24 @@ function makeHourlyChart(
     [
       { data: temperatureF, label: "Temperature (°F)", color: COLOR_TEMP, width: 1, showLow: true },
       { data: windSpeedMph, label: "Wind Speed (mph)", color: COLOR_WIND, width: 1, showLow: false },
-      { data: precipPct, label: "Precip Chance (%)", color: COLOR_PRECIP, width: 0.5, dash: [6, 4], showLow: false },
+      {
+        data: precipPct,
+        label: "Precip Chance (%)",
+        color: COLOR_PRECIP,
+        width: 0.5,
+        fill: "rgba(79, 163, 255, 0.25)",
+        showLow: false,
+      },
       { data: dewpointF, label: "Dew Point (°F)", color: COLOR_DEWPOINT, width: 1, showLow: false },
       { data: relativeHumidity, label: "Humidity (%)", color: COLOR_HUMIDITY, width: 0.5, showLow: false },
-      { data: skyCover, label: "Cloud Cover (%)", color: COLOR_CLOUD, width: 0.5, showLow: false },
+      {
+        data: skyCover,
+        label: "Cloud Cover (%)",
+        color: COLOR_CLOUD,
+        width: 0.5,
+        fill: "rgba(255, 255, 255, 0.15)",
+        showLow: false,
+      },
     ],
     [windArrowPlugin(windDirectionDeg, groupByFixedHours(timesMs.length, 12))]
   );
